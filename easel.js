@@ -1,7 +1,7 @@
 var stations = [];
+var tracks = []
 var stationRadius = 25;
 var currentStation = null;
-var dot = null;
 
 function log(msg) { return; }
 //function log(msg) {console.log(msg);}
@@ -10,6 +10,24 @@ function Station (shape, x, y) {
     this.x = x;
     this.y = y;
     this.shape = shape;
+}
+
+function Track (startStation, endStation) {
+    this.start = startStation;
+    this.end = endStation;
+    this.color = "#".concat(Math.floor(0xffffff*Math.random()).toString(16));
+    this.shape = new createjs.Shape();
+    var dx = endStation.x - startStation.x;
+    var dy = endStation.y - startStation.y;
+    var {x,y} = calculateTrackCoordinates(dx,dy);
+    this.shape.graphics
+        .beginStroke(this.color)
+        .setStrokeStyle(10,"round","round")
+        .moveTo(0,0)
+        .lineTo(x,y)
+        .lineTo(dx,dy);
+    this.shape.x = startStation.x;
+    this.shape.y = startStation.y;
 }
 
 // This returns the coordinates of the bend in the middle of the track,
@@ -85,8 +103,7 @@ function contains(station,x,y) {
 function createStation(x,y,stations,stage) {
     var shape = new createjs.Shape();
     var station = new Station(shape,x,y);
-    var straitLine = undefined;
-    var diagonalLine = undefined;
+    var potentialTrack = undefined;
     shape.graphics.beginFill("ForestGreen").drawCircle(0,0,stationRadius);
     shape.x = x;
     shape.y = y;
@@ -96,18 +113,28 @@ function createStation(x,y,stations,stage) {
         log("CurrentStation: x=" + currentStation.x + " y=" + currentStation.y);
         shape.graphics.beginFill("Red").drawCircle(0,0,stationRadius-5);
         stage.update();
-        dot = new createjs.Shape();
-        dot.graphics.beginFill("Blue").drawCircle(0,0,5);
-        straitLine = new createjs.shape();
-        straitLine = 
+        potentialTrack = new createjs.Shape();
+        potentialTrack.x = 0;
+        potentialTrack.y = 0;
+        stage.addChild(potentialTrack);
         stage.update();
     });
     shape.addEventListener("pressup", function(event) {
         currentStation = undefined;
+        var x = event.stageX, y = event.stageY;
         shape.graphics.beginFill("ForestGreen").drawCircle(0,0,stationRadius);
-        stage.removeChild(dot);
+        stage.removeChild(potentialTrack);
+        for (s of stations) {
+            if (contains(s,x,y)) {
+                var track = new Track(station,s);
+                tracks.push(track);
+                stage.addChild(track.shape);
+                console.log("Added track");
+                console.log(track);
+            }
+        }
         stage.update();
-        dot = undefined;
+        potentialTrack = undefined;
     });
     shape.addEventListener("pressmove",function(event) {
         var dx = event.stageX - shape.x, dy = event.stageY - shape.y;
