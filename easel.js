@@ -125,7 +125,7 @@ function createStation(x,y,stations,stage) {
         shape.graphics.beginFill("ForestGreen").drawCircle(0,0,stationRadius);
         stage.removeChild(potentialTrack);
         for (s of stations) {
-            if (contains(s,x,y)) {
+            if (contains(s,x,y) && s !== station) {
                 var track = new Track(station,s);
                 tracks.push(track);
                 stage.addChild(track.shape);
