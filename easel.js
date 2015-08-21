@@ -10,6 +10,12 @@ function Station (shape, x, y) {
     this.x = x;
     this.y = y;
     this.shape = shape;
+    this.highlight = function() {
+        this.shape.graphics.beginFill("IndianRed").drawCircle(0,0,stationRadius-3);
+    };
+    this.unhighlight = function() {
+        this.shape.graphics.clear().beginFill("ForestGreen").drawCircle(0,0,stationRadius);
+    };
 }
 
 function Track (startStation, endStation) {
@@ -100,6 +106,47 @@ function contains(station,x,y) {
     return dx*dx + dy*dy <= stationRadius*stationRadius;
 }
 
+// Create a callback for beginning a track creation, running the creation, and finalizing it.
+// The object returned has member callbacks create, extend, finalize.
+function makeTrackCreationCB(startStation,stage) {
+    var potentialTrack = undefined;
+    function create(event) {
+        log("Creating a track starting at: ", startStation);
+        startStation.highlight();
+        stage.update();
+        potentialTrack = new createjs.Shape();
+        potentialTrack.x = startStation.x;
+        potentialTrack.y = startStation.y;
+        stage.addChild(potentialTrack);
+    }
+    function finalize(event) {
+        console.log("Finalizing track");
+        startStation.unhighlight();
+        stage.removeChild(potentialTrack);
+        for (s of stations) {
+            if (contains(s,event.stageX,event.stageY) && s !== startStation) {
+                var track = new Track(startStation,s);
+                tracks.push(track);
+                stage.addChild(track.shape);
+            }
+        }
+        stage.update();
+    }
+    function extend(event) {
+        var dx = event.stageX - startStation.shape.x;
+        var dy = event.stageY - startStation.shape.y;
+        var {x,y} = calculateTrackCoordinates(dx,dy);
+        potentialTrack.graphics.clear()
+            .setStrokeStyle(10,"round","round")
+            .beginStroke("Orange")
+            .moveTo(0,0)
+            .lineTo(x,y)
+            .lineTo(dx,dy);
+        stage.update();
+    }
+    return {create,extend,finalize};
+}
+
 function createStation(x,y,stations,stage) {
     var shape = new createjs.Shape();
     var station = new Station(shape,x,y);
@@ -107,48 +154,10 @@ function createStation(x,y,stations,stage) {
     shape.graphics.beginFill("ForestGreen").drawCircle(0,0,stationRadius);
     shape.x = x;
     shape.y = y;
-    shape.addEventListener("mousedown",function(event) {
-        log("Circle clicked");
-        currentStation = station;
-        log("CurrentStation: x=" + currentStation.x + " y=" + currentStation.y);
-        shape.graphics.beginFill("Red").drawCircle(0,0,stationRadius-5);
-        stage.update();
-        potentialTrack = new createjs.Shape();
-        potentialTrack.x = 0;
-        potentialTrack.y = 0;
-        stage.addChild(potentialTrack);
-        stage.update();
-    });
-    shape.addEventListener("pressup", function(event) {
-        currentStation = undefined;
-        var x = event.stageX, y = event.stageY;
-        shape.graphics.beginFill("ForestGreen").drawCircle(0,0,stationRadius);
-        stage.removeChild(potentialTrack);
-        for (s of stations) {
-            if (contains(s,x,y) && s !== station) {
-                var track = new Track(station,s);
-                tracks.push(track);
-                stage.addChild(track.shape);
-                console.log("Added track");
-                console.log(track);
-            }
-        }
-        stage.update();
-        potentialTrack = undefined;
-    });
-    shape.addEventListener("pressmove",function(event) {
-        var dx = event.stageX - shape.x, dy = event.stageY - shape.y;
-        var {x, y} = calculateTrackCoordinates(dx,dy);
-        potentialTrack.graphics.clear()
-            .setStrokeStyle(10,"round","round")
-            .beginStroke("Orange")
-            .moveTo(0,0)
-            .lineTo(x, y)
-            .lineTo(dx,dy);
-        potentialTrack.x = currentStation.x;
-        potentialTrack.y = currentStation.y;
-        stage.update();
-    });
+    var {create,extend,finalize} = makeTrackCreationCB(station,stage);
+    shape.addEventListener("mousedown",create);
+    shape.addEventListener("pressmove",extend);
+    shape.addEventListener("pressup",finalize);
     stations.push(station);
     stage.addChild(shape);
     stage.update();
