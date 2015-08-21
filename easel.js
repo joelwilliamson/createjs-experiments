@@ -12,6 +12,36 @@ function Station (shape, x, y) {
     this.shape = shape;
 }
 
+// This returns the coordinates of the bend in the middle of the track,
+// assuming the beginning is at (0,0).
+function calculateTrackCoordinates(endX, endY) {
+    var dx = -endX;
+    var dy = -endY;
+    var xa=0,ya=0;
+    if (Math.abs(dx) > Math.abs(dy)) {
+        // This is one of the horizontal quadrants
+        ya = endY;
+        if (dx < 0) {
+            xa = Math.abs(endY);
+            log("q1");
+        } else {
+            xa = -Math.abs(endY);
+            log("q3");
+        }
+    } else {
+        // Vertical quadrant
+        xa = endX;
+        if (dy < 0) {
+            ya = Math.abs(endX);
+            log("q2");
+        } else {
+            ya = -Math.abs(endX);
+            log("q4");
+        }
+    }
+    return {x : xa, y : ya};
+}
+
 function init() {
     var stage = new createjs.Stage("demo");
     // Draw a background. Only events on a child of the stage are picked up.
@@ -80,36 +110,17 @@ function createStation(x,y,stations,stage) {
         dot = undefined;
     });
     shape.addEventListener("pressmove",function(event) {
-        var dx = event.stageX - currentStation.x;
-        var dy = event.stageY - currentStation.y;
-        var xa=0,ya=0;
-        if (Math.abs(dx) > Math.abs(dy)) {
-            // This is one of the horizontal quadrants
-            ya = event.stageY;
-            if (dx < 0) {
-                xa = currentStation.x - Math.abs(dy);
-                log("q1");
-            } else {
-                xa = currentStation.x + Math.abs(dy);
-                log("q3");
-            }
-        } else {
-            // Vertical quadrant
-            xa = event.stageX;
-            if (dy < 0) {
-                ya = currentStation.y - Math.abs(dx);
-                log("q2");
-            } else {
-                ya = currentStation.y + Math.abs(dx);
-                log("q4");
-            }
-        }
-        dot.x = xa;
-        dot.y = ya;
-        stage.addChild(dot);
+        var dx = event.stageX - shape.x, dy = event.stageY - shape.y;
+        var {x, y} = calculateTrackCoordinates(dx,dy);
+        potentialTrack.graphics.clear()
+            .setStrokeStyle(10,"round","round")
+            .beginStroke("Orange")
+            .moveTo(0,0)
+            .lineTo(x, y)
+            .lineTo(dx,dy);
+        potentialTrack.x = currentStation.x;
+        potentialTrack.y = currentStation.y;
         stage.update();
-        log("dx="+dx+", xa="+xa+", ya="+ya);
-        log(dot);
     });
     stations.push(station);
     stage.addChild(shape);
