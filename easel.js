@@ -6,6 +6,12 @@ var dot = null;
 function log(msg) { return; }
 //function log(msg) {console.log(msg);}
 
+function Station (shape, x, y) {
+    this.x = x;
+    this.y = y;
+    this.shape = shape;
+}
+
 function init() {
     var stage = new createjs.Stage("demo");
     // Draw a background. Only events on a child of the stage are picked up.
@@ -111,8 +117,3 @@ function createStation(x,y,stations,stage) {
 }
     
 
-function Station (shape, x, y) {
-    this.x = x;
-    this.y = y;
-    this.shape = shape;
-}
