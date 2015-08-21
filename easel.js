@@ -119,6 +119,18 @@ function makeTrackCreationCB(startStation,stage) {
         potentialTrack.y = startStation.y;
         stage.addChild(potentialTrack);
     }
+    function extend(event) {
+        var dx = event.stageX - startStation.shape.x;
+        var dy = event.stageY - startStation.shape.y;
+        var {x,y} = calculateTrackCoordinates(dx,dy);
+        potentialTrack.graphics.clear()
+            .setStrokeStyle(10,"round","round")
+            .beginStroke("Orange")
+            .moveTo(0,0)
+            .lineTo(x,y)
+            .lineTo(dx,dy);
+        stage.update();
+    }
     function finalize(event) {
         console.log("Finalizing track");
         startStation.unhighlight();
@@ -130,18 +142,6 @@ function makeTrackCreationCB(startStation,stage) {
                 stage.addChild(track.shape);
             }
         }
-        stage.update();
-    }
-    function extend(event) {
-        var dx = event.stageX - startStation.shape.x;
-        var dy = event.stageY - startStation.shape.y;
-        var {x,y} = calculateTrackCoordinates(dx,dy);
-        potentialTrack.graphics.clear()
-            .setStrokeStyle(10,"round","round")
-            .beginStroke("Orange")
-            .moveTo(0,0)
-            .lineTo(x,y)
-            .lineTo(dx,dy);
         stage.update();
     }
     return {create,extend,finalize};
