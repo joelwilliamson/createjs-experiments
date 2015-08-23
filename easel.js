@@ -6,6 +6,11 @@ var currentStation = null;
 function log(msg) { return; }
 //function log(msg) {console.log(msg);}
 
+// Return the list with any occurences of elem removed
+function dropElem(list,elem) {
+    return list.filter(function (e) { return e!==elem; });
+}
+
 function Station (shape, x, y) {
     this.x = x;
     this.y = y;
@@ -18,7 +23,7 @@ function Station (shape, x, y) {
     };
 }
 
-function Track (startStation, endStation) {
+function Track (startStation, endStation, stage) {
     this.start = startStation;
     this.end = endStation;
     this.color = "#".concat(Math.floor(0xffffff*Math.random()).toString(16));
@@ -34,6 +39,23 @@ function Track (startStation, endStation) {
         .lineTo(dx,dy);
     this.shape.x = startStation.x;
     this.shape.y = startStation.y;
+
+    tracks.push(this);
+    stage.addChild(this.shape);
+    stage.update();
+
+    var {create,extend,finalize} = makeTrackCreationCB(startStation,stage);
+    this.shape.addEventListener("mousedown",create);
+    this.shape.addEventListener("pressmove",extend);
+    this.shape.addEventListener("pressup",finalize);
+    this.shape.addEventListener("mousedown",function() {
+        console.log("deleting track");
+        stage.removeChild(this.shape);
+        stage.update();
+        console.log(tracks);
+        tracks = dropElem(tracks,this);
+        console.log(tracks);
+    });
 }
 
 // This returns the coordinates of the bend in the middle of the track,
@@ -137,9 +159,7 @@ function makeTrackCreationCB(startStation,stage) {
         stage.removeChild(potentialTrack);
         for (s of stations) {
             if (contains(s,event.stageX,event.stageY) && s !== startStation) {
-                var track = new Track(startStation,s);
-                tracks.push(track);
-                stage.addChild(track.shape);
+                new Track(startStation,s,stage);
             }
         }
         stage.update();
